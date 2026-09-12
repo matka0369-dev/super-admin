@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Route, Routes } from 'react-router-dom';
 import {
   Alert,
+  AdminBusinessCard,
   Card,
   CreateUserForm,
   GamesManagementCard,
@@ -13,6 +15,7 @@ import {
   Stat,
   UserTable,
   api,
+  useRoutedTabs,
   type NavItem,
   type UserSummary,
 } from './shared';
@@ -33,6 +36,7 @@ const NAV: NavItem[] = [
 export function Dashboard() {
   const [users, setUsers] = useState<UserSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const { activeId, onSelectTab } = useRoutedTabs('overview');
 
   const load = useCallback(async () => {
     try {
@@ -56,6 +60,8 @@ export function Dashboard() {
       title="Welcome, Platform Admin"
       subtitle="Provision Admin accounts and control their status and sessions."
       nav={NAV}
+      activeId={activeId}
+      onSelectTab={onSelectTab}
     >
       {error && <Alert tone="error">{error}</Alert>}
 
@@ -72,13 +78,25 @@ export function Dashboard() {
       </Section>
 
       <Section id="admins">
-        <UserTable
-          title="Admins"
-          desc="Every Admin account on the platform."
-          users={users}
-          canManage
-          onChanged={() => void load()}
-        />
+        {/* "/admins" is the roster, "/admins/:id" that one Admin's business
+            summary (click a row) — both stay on the "admins" tab since
+            useRoutedTabs only looks at the URL's first segment. */}
+        <Routes>
+          <Route
+            path="/admins"
+            element={
+              <UserTable
+                title="Admins"
+                desc="Every Admin account on the platform — click one for its business summary."
+                users={users}
+                canManage
+                onChanged={() => void load()}
+                linkTo={(u) => `/admins/${u.id}`}
+              />
+            }
+          />
+          <Route path="/admins/:id" element={<AdminBusinessCard />} />
+        </Routes>
       </Section>
 
       <Section id="games">
